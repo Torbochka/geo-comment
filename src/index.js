@@ -1,26 +1,95 @@
-import ymaps from 'ymaps';
+const feedbackTemplate = require('../src/form-feedback.hbs');
 
-const ymap = document.querySelector('#map');
-const ysrc = 'https://api-maps.yandex.ru/2.1.73/?apikey=a5aed195-90aa-45d5-a3a6-cee5ef5ee9a9&lang=ru_RU';
+const feedback = document.querySelector('#feedback');
 
-// Подождать пока
-let map = ymaps.load(ysrc).then(maps => {
-    return new maps.Map('map', {
+ymaps.ready(() => {
+
+    let point = {};
+    let countId = 0;
+    let pointsData = {};
+    let map = new ymaps.Map('map', {
         center: [55.76, 37.64],
         zoom: 7
     });
-}).catch(error => console.log('Failed to load Yandex Maps', error));
 
-ymap.addEventListener('click', () => {
-    map.then(m => {
+    let getAddress = (coords) => {
+        return ymaps.geocode(coords).then((r) => r.geoObjects.get(0).getAddressLine());
+    };
 
-        console.log(m);
+    let closeForm = (e) => {
+        if (e.target.id === 'close') {
+            feedback.innerHTML = feedbackTemplate();
+            feedback.style.left = '0';
+            feedback.style.top = '0';
+            feedback.style.display = 'none';
+        }
+    };
 
-        m.geoObjects.add(new ymaps.Placemark([55.684758, 37.738521], {
-            balloonContent: 'цвет <strong>воды пляжа бонди</strong>'
-        }, {
-            preset: 'islands#icon',
-            iconColor: '#0095b6'
-        }))
+    let formatedDate = (date) => {
+
+        let m = date.getMonth().length > 1 ? date.getMonth() : `0${date.getMonth()}`;
+        let d = date.getDay().length > 1 ? date.getDay() : `0${date.getDay()}`;
+
+        return [
+            `${date.getFullYear()}.${m}.${d}`,
+            `${date.getHours()}:${m}:${date.getSeconds()}`
+        ].join(' ');
+    };
+
+    map.events.add('click', e => {
+        let c = e.get('coords');
+
+        point = new ymaps.Placemark(c, {
+            id: ++countId,
+            location: getAddress(c)
+        });
+
+        feedbackTemplate({ location: getAddress(c) });
+
+        let pagePixels = e.get('pagePixels');
+
+        feedback.style.left = `${pagePixels[0]}px`;
+        feedback.style.top = `${pagePixels[1]}px`;
+        feedback.style.display = 'block';
     });
+
+    document.addEventListener('click', e => {
+
+        // TODO разобраться с шаблоном
+        const feedback = document.querySelector('#feedback');
+        const name = document.querySelector('#name');
+        const place = document.querySelector('#place');
+        const comment = document.querySelector('#comment');
+
+        if (e.target.id === 'add-comment') {
+            let pointId = point.properties.get('id');
+            let date = formatedDate(new Date());
+
+            if (pointsData.hasOwnProperty(pointId)) {
+                pointsData[pointId].comments.push({
+                    name: name.value,
+                    place: place.value,
+                    comment: comment.value,
+                    date: date
+                });
+            } else {
+                pointsData[pointId] = {
+                    location: point.properties.get('location'),
+                    comments: [{
+                        name: name.value,
+                        place: place.value,
+                        comment: comment.value,
+                        date: date
+                    }]
+                };
+                map.geoObjects.add(point);
+            }
+
+            feedback.innerHTML = feedbackTemplate(pointsData[pointId]);
+        }
+
+        closeForm(e);
+    });
+
 });
+

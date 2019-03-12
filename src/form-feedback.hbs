@@ -1,0 +1,17 @@
+<div id="header" class="header">
+    <span>{{location}}</span>
+    <span id="close" class="close">x</span>
+</div>
+<div id="comments" class="comments">
+    {{#each comments}}
+        {{name}} {{place}} {{date}} {{comment}}
+    {{/each}}
+</div>
+<div id="body" class="body">
+    <form id="description" name="add-comment">
+        <input id="name" type="text" name="name" placeholder="Ваше имя">
+        <input id="place" type="text" name="place" placeholder="Укажите место">
+        <textarea id="comment" name="comment" cols="30" rows="10" placeholder="Поделитесь впечатлениями"></textarea>
+        <button id="add-comment" type="button">Добавить</button>
+    </form>
+</div>

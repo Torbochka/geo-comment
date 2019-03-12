@@ -3,8 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>{{htmlWebpackPlugin.options.title}}</title>
+    <script src="https://api-maps.yandex.ru/2.1.73/?apikey=a5aed195-90aa-45d5-a3a6-cee5ef5ee9a9&lang=ru_RU" type="text/javascript"></script>
 </head>
 <body>
     <div id="map" style="min-width: 800px; min-height: 600px"></div>
+    <div id="feedback" class="feedback">
+        {{> "form-feedback.hbs"}}
+    </div>
+    <style>
+        .feedback {
+            position: absolute;
+            display: none;
+            width: 300px;
+            height: 500px;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+        }
+    </style>
 </body>
 </html>
