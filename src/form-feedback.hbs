@@ -3,9 +3,13 @@
     <span id="close" class="close">x</span>
 </div>
 <div id="comments" class="comments">
-    {{#each comments}}
-        {{name}} {{place}} {{date}} {{comment}}
-    {{/each}}
+    {{#if comments}}
+        {{#each comments}}
+            {{name}} {{place}} {{date}} {{comment}}
+        {{/each}}
+    {{else}}
+        Отзывов пока нет...
+    {{/if}}
 </div>
 <div id="body" class="body">
     <form id="description" name="add-comment">
