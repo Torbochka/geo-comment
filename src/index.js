@@ -1,24 +1,25 @@
-const feedbackTemplate = require('../src/form-feedback.hbs');
-
+const feedbackTempl = require('../src/form-feedback.hbs');
 const feedback = document.querySelector('#feedback');
+let name;
+let place;
+let comment;
 
 ymaps.ready(() => {
-
     let point = {};
-    let countId = 0;
-    let pointsData = {};
+    let incId = 0;
+    let oPoints = {};
     let map = new ymaps.Map('map', {
         center: [55.76, 37.64],
         zoom: 7
     }, {});
 
-    let customItemContentLayout = ymaps.templateLayoutFactory.createClass(
+    let customContentLayout = ymaps.templateLayoutFactory.createClass(
         '<h2 class=ballon_header>{{ properties.balloonContentHeader|raw }}</h2>' +
         '<div class=ballon_body>{{ properties.balloonContentBody|raw }}</div>' +
         '<div class=ballon_footer>{{ properties.balloonContentFooter|raw }}</div>'
     );
 
-    let clusterer = new ymaps.Clusterer({
+    let oCluster = new ymaps.Clusterer({
         preset: 'islands#invertedVioletClusterIcons',
         groupByCoordinates: false,
         clusterDisableClickZoom: true,
@@ -26,7 +27,7 @@ ymaps.ready(() => {
         geoObjectHideIconOnBalloonOpen: false,
         clusterOpenBalloonOnClick: true,
         clusterBalloonContentLayout: 'cluster#balloonCarousel',
-        clusterBalloonItemContentLayout: customItemContentLayout,
+        clusterBalloonItemContentLayout: customContentLayout,
         clusterBalloonPanelMaxMapArea: 0,
         clusterBalloonContentLayoutWidth: 200,
         clusterBalloonContentLayoutHeight: 130,
@@ -34,20 +35,62 @@ ymaps.ready(() => {
 
     });
 
-    let getAddress = (coords) => {
+    let getAddr = coords => {
         return ymaps.geocode(coords).then((r) => r.geoObjects.get(0).getAddressLine());
     };
 
-    let closeForm = (e) => {
-        if (e.target.id === 'close') {
-            feedback.innerHTML = feedbackTemplate();
-            feedback.style.left = '0';
-            feedback.style.top = '0';
-            feedback.style.display = 'none';
+    let addCommentOnForm = () => {
+        let pId = point.properties.get('id');
+        let date = formatDate(new Date());
+
+        if (oPoints.hasOwnProperty(pId)) {
+            oPoints[pId].comments.push({
+                name: name.value,
+                place: place.value,
+                comment: comment.value,
+                date: date
+            });
+
+            oCluster.add(new ymaps.Placemark(point.geometry.getCoordinates(), {
+                id: ++incId,
+                location: point.properties.get('location')
+            }, {
+                preset: 'islands#violetIcon',
+                balloonContentHeader: point.properties.get('location'),
+                balloonContentBody: comment.value,
+                balloonContentFooter: date
+            }));
+
+        } else {
+            oPoints[pId] = {
+                location: point.properties.get('location'),
+                comments: [{
+                    name: name.value,
+                    place: place.value,
+                    comment: comment.value,
+                    date: date
+                }]
+            };
+
+            point.properties.set('balloonContentBody', [...comment.value]);
+            point.properties.set('balloonContentFooter', date);
+
+            map.geoObjects.remove(oCluster);
+            oCluster.add(point);
+            map.geoObjects.add(oCluster);
         }
+
+        feedback.innerHTML = feedbackTempl(oPoints[pId]);
     };
 
-    let formatedDate = (date) => {
+    let displayCommentForm = (l = '0', t = '0', d = 'none', oPoint) => {
+        feedback.innerHTML = feedbackTempl();
+        feedback.style.left = l;
+        feedback.style.top = t;
+        feedback.style.display = d;
+    };
+
+    let formatDate = (date) => {
         let m = date.getMonth().length > 1 ? date.getMonth() : `0${date.getMonth()}`;
         let d = date.getDay().length > 1 ? date.getDay() : `0${date.getDay()}`;
 
@@ -56,90 +99,45 @@ ymaps.ready(() => {
             `${date.getHours()}:${m}:${date.getSeconds()}`
         ].join(' ');
     };
-
+    
     map.events.add('click', e => {
-        let c = e.get('coords');
-        let address = getAddress(c);
+        let coords = e.get('coords');
+        let addr = getAddr(coords);
 
-        point = new ymaps.Placemark(c, {
-            id: ++countId,
-            location: address
+        point = new ymaps.Placemark(coords, {
+            id: ++incId,
+            location: addr
         }, {
             preset: 'islands#violetIcon',
-            balloonContentHeader: address,
-            balloonContentBody: [],
-            balloonContentFooter: ''
+            balloonContentHeader: addr
         });
+        
+        let fbTempl = feedbackTempl({ location: point.properties.get('location') });
+        let pagePxls = e.get('pagePixels');
 
-        feedback.innerHTML = feedbackTemplate({ location: point.properties.get('location') });
-        let pagePixels = e.get('pagePixels');
-
-        feedback.style.left = `${pagePixels[0]}px`;
-        feedback.style.top = `${pagePixels[1]}px`;
-        feedback.style.display = 'block';
+        displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
 
         point.events.add('click', e => {
-            feedback.innerHTML = feedbackTemplate(pointsData[e.get('target').properties.get('id')]);
-            let pagePixels = e.get('pagePixels');
+            let fbTempl = feedbackTempl(oPoints[e.get('target').properties.get('id')]);
+            let pagePxls = e.get('pagePixels');
 
-            feedback.style.left = `${pagePixels[0]}px`;
-            feedback.style.top = `${pagePixels[1]}px`;
-            feedback.style.display = 'block';
+            displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
         });
     });
 
     document.addEventListener('click', e => {
-
         // TODO разобраться с шаблоном
-        const name = document.querySelector('#name');
-        const place = document.querySelector('#place');
-        const comment = document.querySelector('#comment');
+        name = document.querySelector('#name');
+        place = document.querySelector('#place');
+        comment = document.querySelector('#comment');
 
         if (e.target.id === 'add-comment') {
-            let pointId = point.properties.get('id');
-            let date = formatedDate(new Date());
-
-            if (pointsData.hasOwnProperty(pointId)) {
-                pointsData[pointId].comments.push({
-                    name: name.value,
-                    place: place.value,
-                    comment: comment.value,
-                    date: date
-                });
-
-                clusterer.add(new ymaps.Placemark(point.geometry.getCoordinates(), {
-                    id: ++countId,
-                    location: point.properties.get('location')
-                }, {
-                    preset: 'islands#violetIcon',
-                    balloonContentHeader: point.properties.get('location'),
-                    balloonContentBody: comment.value,
-                    balloonContentFooter: date
-                }));
-
-            } else {
-                pointsData[pointId] = {
-                    location: point.properties.get('location'),
-                    comments: [{
-                        name: name.value,
-                        place: place.value,
-                        comment: comment.value,
-                        date: date
-                    }]
-                };
-
-                point.properties.balloonContentBody = [...comment.value];
-                point.properties.balloonContentFooter = date;
-
-                map.geoObjects.remove(clusterer);
-                clusterer.add(point);
-                map.geoObjects.add(clusterer);
-            }
-
-            feedback.innerHTML = feedbackTemplate(pointsData[pointId]);
+            addCommentOnForm(e);
         }
 
-        closeForm(e);
+        if (e.target.id === 'close') {
+            displayCommentForm();
+        }
     });
 
 });
