@@ -48,6 +48,7 @@
     "@babel/plugin-transform-runtime": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/runtime": "^7.1.2",
+    "@fortawesome/fontawesome-free": "5.7.2",
     "assertion-error": "^1.1.0",
     "babel-loader": "^8.0.4",
     "clean-webpack-plugin": "^0.1.19",
