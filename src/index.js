@@ -155,9 +155,6 @@ ymaps.ready(() => {
 
             e.preventDefault();
             let pagePxls = [e.clientX, e.clientY];
-
-            console.log(e);
-
             let fbTempl = feedbackTempl(oPoints[e.target.dataset.indexNumber]);
 
             displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
