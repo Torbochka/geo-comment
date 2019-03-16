@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import '../src/style.css';
 import '@fortawesome/fontawesome-free/js/all';
 
