@@ -1,18 +1,11 @@
-import Point from '../src/PointModel.js';
 import Points from '../src/Points.js';
 import Controller from '../src/Controller.js';
-import YMaps from '../src/Utils.js';
 
 import '../src/style.css';
 import '@fortawesome/fontawesome-free/js/all';
-import Utils from "./Utils";
 
 const feedbackTempl = require('./feedbackForm.hbs');
 const feedback = document.querySelector('#feedback');
-let name;
-let place;
-let comment;
-let date;
 
 let points = new Points();
 
@@ -75,12 +68,6 @@ ymaps.ready(() => {
     });
 
     document.addEventListener('click', e => {
-    // TODO разобраться с шаблоном
-        name = document.querySelector('#name');
-        place = document.querySelector('#place');
-        comment = document.querySelector('#comment');
-        date = Utils.formatDate(new Date());
-
         if (e.target.id === 'add-comment') {
             Controller.addCommentOnForm(e, map, oCluster);
 
