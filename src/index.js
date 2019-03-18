@@ -5,6 +5,7 @@ import YMaps from '../src/Utils.js';
 
 import '../src/style.css';
 import '@fortawesome/fontawesome-free/js/all';
+import Utils from "./Utils";
 
 const feedbackTempl = require('./feedbackForm.hbs');
 const feedback = document.querySelector('#feedback');
@@ -57,16 +58,6 @@ ymaps.ready(() => {
         feedback.style.display = d;
     };
 
-    let formatDate = date => {
-        let m = date.getMonth().length > 1 ? date.getMonth() : `0${date.getMonth()}`;
-        let d = date.getDay().length > 1 ? date.getDay() : `0${date.getDay()}`;
-
-        return [
-            `${date.getFullYear()}.${m}.${d}`,
-            `${date.getHours()}:${m}:${date.getSeconds()}`
-        ].join(' ');
-    };
-
     map.events.add('click', e => {
         Controller.openFormOnMap(e);
     });
@@ -88,7 +79,7 @@ ymaps.ready(() => {
         name = document.querySelector('#name');
         place = document.querySelector('#place');
         comment = document.querySelector('#comment');
-        date = formatDate(new Date());
+        date = Utils.formatDate(new Date());
 
         if (e.target.id === 'add-comment') {
             Controller.addCommentOnForm(e, map, oCluster);
