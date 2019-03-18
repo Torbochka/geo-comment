@@ -1,7 +1,7 @@
 {
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": 8
+    "ecmaVersion": 6
   },
   "env": {
     "node": true,
@@ -40,8 +40,21 @@
       120,
       { "ignoreComments": true }
     ],
-    "newline-after-var": "error",
-    "newline-before-return": "error",
+    "padding-line-between-statements": [
+      "error",
+      { "blankLine": "always",
+        "prev": ["const", "let", "var"],
+        "next": "*"
+      },
+      { "blankLine": "always",
+        "prev": "*",
+        "next": "return"
+      },
+      { "blankLine": "any",
+        "prev": ["const", "let", "var"],
+        "next": ["const", "let", "var"]
+      }
+    ],
     "no-multiple-empty-lines": [
       "error",
       {
@@ -103,5 +116,6 @@
       "error",
       4
     ]
-  }
+  },
+  "parser": "babel-eslint"
 }

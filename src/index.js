@@ -1,22 +1,21 @@
+import Point from '../src/PointModel.js';
+import Points from '../src/Points.js';
+import Controller from '../src/Controller.js';
+import YMaps from '../src/Utils.js';
+
 import '../src/style.css';
 import '@fortawesome/fontawesome-free/js/all';
 
-const feedbackTempl = require('../src/form-feedback.hbs');
+const feedbackTempl = require('./feedbackForm.hbs');
 const feedback = document.querySelector('#feedback');
 let name;
 let place;
 let comment;
 let date;
 
+let points = new Points();
+
 ymaps.ready(() => {
-    let point = {};
-    let incId = 0;
-    let oPoints = {};
-    let customContentLayout = ymaps.templateLayoutFactory.createClass(
-        '<h2 class=ballon-header>{{ properties.balloonContentHeader|raw }}</h2>' +
-        '<div class=ballon-body>{{ properties.balloonContentBody|raw }}</div>' +
-        '<div class=ballon-footer>{{ properties.balloonContentFooter|raw }}</div>'
-    );
 
     let map = new ymaps.Map('map', {
         center: [55.76, 37.64],
@@ -27,6 +26,12 @@ ymaps.ready(() => {
     map.controls.remove('searchControl');
     map.controls.remove('trafficControl');
     map.controls.remove('typeSelector');
+
+    let customContentLayout = ymaps.templateLayoutFactory.createClass(
+        '<h2 class=ballon-header>{{ properties.balloonContentHeader|raw }}</h2>' +
+    '<div class=ballon-body>{{ properties.balloonContentBody|raw }}</div>' +
+    '<div class=ballon-footer>{{ properties.balloonContentFooter|raw }}</div>'
+    );
 
     let oCluster = new ymaps.Clusterer({
         preset: 'islands#invertedVioletClusterIcons',
@@ -62,95 +67,32 @@ ymaps.ready(() => {
         ].join(' ');
     };
 
-    let addCommentOnForm = () => {
-        let pId = point.properties.get('id');
-        let location = point.properties.get('location');
-        let header = [`<b>${name.value}</b>`,
-            `<a href="" id='ballonHeader' data-index-number='${pId}'>${location}</a>`
-        ].join('');
-
-        if (oPoints.hasOwnProperty(pId)) {
-            oPoints[pId].comments.push({
-                name: name.value,
-                place: place.value,
-                comment: comment.value,
-                date: date
-            });
-
-            let newPoint = new ymaps.Placemark(point.geometry.getCoordinates(), {
-                id: ++incId,
-                parentId: pId,
-                location: point.properties.get('location'),
-                balloonContentHeader: header,
-                balloonContentBody: comment.value,
-                balloonContentFooter: date
-            }, {
-                preset: 'islands#violetIcon',
-            });
-
-            oCluster.add(newPoint);
-
-        } else {
-            oPoints[pId] = {
-                location: point.properties.get('location'),
-                comments: [{
-                    name: name.value,
-                    place: place.value,
-                    comment: comment.value,
-                    date: date
-                }]
-            };
-
-            point.properties.set({
-                'balloonContentHeader': header,
-                'balloonContentBody': comment.value,
-                balloonContentFooter: date
-            });
-            oCluster.add(point);
-        }
-
-        feedback.innerHTML = feedbackTempl(oPoints[pId]);
-    };
-    
     map.events.add('click', e => {
-        ymaps.geocode(e.get('coords'), { result: 1 })
-            .then(res => {
-                let geoObject = res.geoObjects.get(0);
-                let coords = geoObject.geometry.getCoordinates();
-                let address = geoObject.getAddressLine();
+        Controller.openFormOnMap(e);
+    });
 
-                point = new ymaps.Placemark(coords, {
-                    id: ++incId,
-                    location: address,
-                }, {
-                    preset: 'islands#violetIcon',
-                    openBalloonOnClick: false
-                });
+    map.geoObjects.events.add('click', e => {
+        let pagePxls = e.get('pagePixels');
+        let geoObject = e.get('target').properties.get('geoObjects') || e.get('target');
 
-                let fbTempl = feedbackTempl({ location: address });
-                let pagePxls = e.get('pagePixels');
+        if (!Array.isArray(geoObject)) {
+            let oPoint = points.getPoint(geoObject.properties.get('id'));
+            let fbTempl = feedbackTempl(oPoint.getPoint());
 
-                displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
-
-                point.events.add('click', e => {
-                    let fbTempl = feedbackTempl(oPoints[e.get('target').properties.get('id')]);
-                    let pagePxls = e.get('pagePixels');
-
-                    displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
-                });
-            });
+            displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
+        }
     });
 
     document.addEventListener('click', e => {
-        // TODO разобраться с шаблоном
+    // TODO разобраться с шаблоном
         name = document.querySelector('#name');
         place = document.querySelector('#place');
         comment = document.querySelector('#comment');
         date = formatDate(new Date());
 
         if (e.target.id === 'add-comment') {
-            addCommentOnForm();
-            
+            Controller.addCommentOnForm(e, map, oCluster);
+
             return;
         }
 
@@ -162,9 +104,9 @@ ymaps.ready(() => {
 
         if (e.target.id === 'ballonHeader') {
             e.preventDefault();
-            map.balloon.close();
+            oCluster.balloon.close();
             let pagePxls = [e.clientX, e.clientY];
-            let fbTempl = feedbackTempl(oPoints[e.target.dataset.indexNumber]);
+            let fbTempl = feedbackTempl(points.getPoint(+e.target.dataset.indexNumber).getPoint());
 
             displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
         }

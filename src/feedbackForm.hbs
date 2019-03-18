@@ -1,0 +1,28 @@
+<div id="feedback" class="feedback">
+    <div id="header" class="header">
+        <div class="place"><i class="fas fa-map-marker-alt"></i></div>
+        <div class="location">{{location}}</div>
+        <div class="close" id="close"><i class="fas fa-times"></i></div>
+    </div>
+    <div id="comments" class="comments">
+        {{#if comments}}
+            {{#each comments}}
+                <div class="comment">
+                    <span><b>{{name}}</b> {{place}} {{date}}</span>
+                    <span>{{comment}}</span>
+                </div>
+            {{/each}}
+        {{else}}
+            <div class="comment"><span>Отзывов пока нет...</span></div>
+        {{/if}}
+    </div>
+    <div id="body" class="body">
+        <h2>Ваш отзыв</h2>
+        <form id="description" name="add-comment">
+            <input id="name" type="text" name="name" placeholder="Ваше имя">
+            <input id="place" type="text" name="place" placeholder="Укажите место">
+            <textarea id="comment" name="comment" cols="30" rows="10" placeholder="Поделитесь впечатлениями"></textarea>
+            <button id="add-comment" type="button">Добавить</button>
+        </form>
+    </div>
+</div>
