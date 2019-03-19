@@ -1,31 +1,28 @@
-import Points from '../src/Points.js';
-import Controller from '../src/Controller.js';
-
+import Controller from './Controllers/PointController.js';
+import YObjects from './Models/YObjects.js';
+import DnD from './Dnd.js';
 import '../src/style.css';
 import '@fortawesome/fontawesome-free/js/all';
 
-const feedbackTempl = require('./feedbackForm.hbs');
-const feedback = document.querySelector('#feedback');
-
-let points = new Points();
+const yObjects = new YObjects();
 
 ymaps.ready(() => {
+    const fullscreenControl = new ymaps.control.FullscreenControl();
 
     let map = new ymaps.Map('map', {
         center: [55.76, 37.64],
         zoom: 10,
-    }, {});
+        controls: [fullscreenControl]
+    }, {
+        fullscreenZIndex: 900
+    });
+
+    fullscreenControl.enterFullscreen();
 
     map.controls.remove('zoomControl');
     map.controls.remove('searchControl');
     map.controls.remove('trafficControl');
     map.controls.remove('typeSelector');
-
-    let customContentLayout = ymaps.templateLayoutFactory.createClass(
-        '<h2 class=ballon-header>{{ properties.balloonContentHeader|raw }}</h2>' +
-    '<div class=ballon-body>{{ properties.balloonContentBody|raw }}</div>' +
-    '<div class=ballon-footer>{{ properties.balloonContentFooter|raw }}</div>'
-    );
 
     let oCluster = new ymaps.Clusterer({
         preset: 'islands#invertedVioletClusterIcons',
@@ -35,7 +32,11 @@ ymaps.ready(() => {
         geoObjectHideIconOnBalloonOpen: false,
         clusterOpenBalloonOnClick: true,
         clusterBalloonContentLayout: 'cluster#balloonCarousel',
-        clusterBalloonItemContentLayout: customContentLayout,
+        clusterBalloonItemContentLayout: ymaps.templateLayoutFactory.createClass (
+            '<h2 class=ballon-header>{{ properties.balloonContentHeader|raw }}</h2>' +
+            '<div class=ballon-body>{{ properties.balloonContentBody|raw }}</div>' +
+            '<div class=ballon-footer>{{ properties.balloonContentFooter|raw }}</div>'
+        ),
         clusterBalloonPanelMaxMapArea: 0,
         clusterBalloonContentLayoutWidth: 200,
         clusterBalloonContentLayoutHeight: 130,
@@ -43,50 +44,34 @@ ymaps.ready(() => {
     });
 
     map.geoObjects.add(oCluster);
+    yObjects.addYObject('map', map)
+        .addYObject('cluster', oCluster);
 
-    let displayCommentForm = (l = '0', t = '0', d = 'none', oPoint) => {
-        feedback.innerHTML = oPoint;
-        feedback.style.left = l;
-        feedback.style.top = t;
-        feedback.style.display = d;
-    };
+    DnD.addListeners(window);
 
     map.events.add('click', e => {
         Controller.openFormOnMap(e);
     });
 
     map.geoObjects.events.add('click', e => {
-        let pagePxls = e.get('pagePixels');
-        let geoObject = e.get('target').properties.get('geoObjects') || e.get('target');
-
-        if (!Array.isArray(geoObject)) {
-            let oPoint = points.getPoint(geoObject.properties.get('id'));
-            let fbTempl = feedbackTempl(oPoint.getPoint());
-
-            displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
-        }
+        Controller.clickMap(e);
     });
 
     document.addEventListener('click', e => {
         if (e.target.id === 'add-comment') {
-            Controller.addCommentOnForm(e, map, oCluster);
+            Controller.addCommentOnForm(e);
 
             return;
         }
 
         if (e.target.closest('#close')) {
-            displayCommentForm();
+            Controller.closeForm();
 
             return;
         }
 
         if (e.target.id === 'ballonHeader') {
-            e.preventDefault();
-            oCluster.balloon.close();
-            let pagePxls = [e.clientX, e.clientY];
-            let fbTempl = feedbackTempl(points.getPoint(+e.target.dataset.indexNumber).getPoint());
-
-            displayCommentForm(`${pagePxls[0]}px`, `${pagePxls[1]}px`, 'block', fbTempl);
+            Controller.openFormByClickBallon(e);
         }
     });
 });

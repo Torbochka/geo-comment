@@ -1,6 +1,6 @@
 let instance;
 
-class Points {
+class PointsModel {
 
     #key = 0;
     #points = new Map();
@@ -21,13 +21,9 @@ class Points {
         return this.#points.get(k);
     }
 
-    getPoints() {
-        return this.#points;
-    }
-
     getKeyCounter() {
         return this.#key;
     }
 }
 
-export default Points;
+export default PointsModel;

@@ -1,4 +1,4 @@
-export default class Point {
+export default class PointModel {
 
     #point = {
         location: '',
@@ -6,7 +6,7 @@ export default class Point {
     };
 
     static createPoint() {
-        return new Point();
+        return new PointModel();
     }
 
     addComment({ l, n, p, c, d }) {

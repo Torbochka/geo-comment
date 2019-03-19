@@ -9,5 +9,14 @@ export default class Utils {
             `${date.getHours()}:${m}:${date.getSeconds()}`
         ].join(' ');
     }
+
+    static getCoords(el) {
+        let elPosition = el.getBoundingClientRect();
+
+        return {
+            top: elPosition.top + pageYOffset,
+            left: elPosition.left + pageXOffset
+        };
+    }
 }
 
